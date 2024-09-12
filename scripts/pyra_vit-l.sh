@@ -20,20 +20,20 @@ do
     do
         for LR in 0.001
         do
-            LOG_DIR=logs/${currenttime}_${CONFIG}_compress_${merge_schedule}_PYRA_LR_${pyra_lr}
+            LOG_DIR=outputs/${currenttime}_${CONFIG}_compress_${merge_schedule}_PYRA_LR_${pyra_lr}
             
             TARGET_DIR=${LOG_DIR}/${DATASET}_lr-${LR}_wd-${WEIGHT_DECAY}
             if [ ! -d ${TARGET_DIR} ]
             then
-                mkdir ${LOG_DIR}
-                mkdir ${TARGET_DIR}
+                mkdir -p ${LOG_DIR}
+                mkdir -p ${TARGET_DIR}
             else
                 echo "Dir already exists, skipping ${TARGET_DIR}"
                 continue
             fi
             CUDA_VISIBLE_DEVICES=${device} python train.py --data-path=./data/vtab-1k/${DATASET} --data-set=${DATASET}\
                     --cfg=${CONFIG_DIR} --resume=${CKPT} --output_dir=${TARGET_DIR}\
-                    --batch-size=32 --lr=${LR} --epochs=100 --is_LoRA --weight-decay=${WEIGHT_DECAY}\
+                    --batch-size=32 --lr=${LR} --epochs=100 --weight-decay=${WEIGHT_DECAY}\
                     --no_aug --mixup=0 --cutmix=0 --direct_resize --smoothing=0\
                     --token_merging --merging_schedule=${merge_schedule}\
                     --pyra --separate_lr_for_pyra --pyra_lr=${pyra_lr}\

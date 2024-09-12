@@ -17,7 +17,7 @@ from model.optim_factory import create_optimizer
 
 from timm.utils import NativeScaler
 from lib.datasets import build_dataset
-from engine import train_one_epoch, evaluate
+from engine import train_one_epoch, evaluate, test_model_latency, count_model_flops
 from lib.samplers import RASampler
 from lib import utils
 from lib.config import cfg, update_config_from_file
@@ -30,7 +30,7 @@ from timm.models import load_checkpoint
 from mmcv.runner import get_dist_info, init_dist
 
 # tome
-from model.tome import parse_r, get_merging_schedule
+from model.tome import parse_r, get_merging_schedule, apply_tome
 from timm.utils.model import unwrap_model
 
 import os
@@ -258,12 +258,6 @@ def get_args_parser():
         default='none',
         help='job launcher')
 
-    parser.add_argument('--is_visual_prompt_tuning', action='store_true')
-    parser.add_argument('--is_adapter', action='store_true')
-    parser.add_argument('--is_LoRA', action='store_true')
-    parser.add_argument('--is_prefix', action='store_true')
-    parser.add_argument('--is_consolidator', action='store_true')
-
     parser.add_argument('--no_aug', action='store_true')
 
     parser.add_argument('--val_interval', default=10, type=int, help='validataion interval')
@@ -315,8 +309,8 @@ def main(args):
     np.random.seed(seed)
     # random.seed(seed)
     cudnn.benchmark = True
-    dataset_train, args.nb_classes = build_dataset(is_train=True, args=args,is_individual_prompt=True)
-    dataset_val, _ = build_dataset(is_train=False, args=args,is_individual_prompt=True)
+    dataset_train, args.nb_classes = build_dataset(is_train=True, args=args)
+    dataset_val, _ = build_dataset(is_train=False, args=args)
 
     if args.distributed:
         num_tasks = utils.get_world_size()
@@ -389,12 +383,25 @@ def main(args):
                                                 pyra_r = pyra_r
                                             )
 
+    # initialize token merging
+    if args.token_merging:
+        print("Token merging initialization.")
+        model_module = unwrap_model(model)
+        apply_tome(model_module)
+        model_module.r = tome_r
+
     if args.resume:
-        if 'pth' in args.resume :
-            incompatible_keys = timm_load_checkpoint(model, args.resume,strict=False)
-            print(incompatible_keys)
-            if args.nb_classes != model.head.weight.shape[0]:
-                model.reset_classifier(args.nb_classes)
+        if 'pth' in args.resume:
+            if "best_checkpoint" in args.resume:
+                if args.nb_classes != model.head.weight.shape[0]:
+                    model.reset_classifier(args.nb_classes)
+                incompatible_keys = timm_load_checkpoint(model, args.resume,strict=True)
+                print(incompatible_keys)
+            else:
+                incompatible_keys = timm_load_checkpoint(model, args.resume,strict=False)
+                print(incompatible_keys)
+                if args.nb_classes != model.head.weight.shape[0]:
+                    model.reset_classifier(args.nb_classes)
             # print("Try without loading pth")
         else:
             load_checkpoint(model, args.resume)
@@ -421,7 +428,10 @@ def main(args):
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu], find_unused_parameters=True)
         model_without_ddp = model.module
 
-
+    # test model latency and count model FLOPS
+    model.to(device)
+    test_model_latency(model, device, args.test_batch_size)
+    count_model_flops(model, device)
 
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
     print('number of params:', n_parameters)
@@ -448,7 +458,7 @@ def main(args):
         f.write(args_text)
 
     if args.eval:
-        test_stats = evaluate(data_loader_val, model, device)
+        test_stats = evaluate(data_loader_val, model, device, amp=args.amp)
         print(f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.1f}%")
         return
 
@@ -467,28 +477,16 @@ def main(args):
             args.clip_grad, model_ema, mixup_fn,
             amp=args.amp, teacher_model=teacher_model,
             teach_loss=teacher_loss,
-            use_tome = args.token_merging, tome_initialized=tome_initialized, tome_r=tome_r,
-            test_batch_size=args.test_batch_size,
             deit="deit" in cfg.MODEL_NAME
         )
         tome_initialized = True
 
         lr_scheduler.step(epoch)
-        if args.output_dir and args.save_ckpt:
-            checkpoint_paths = [output_dir / 'checkpoint.pth']
-            for checkpoint_path in checkpoint_paths:
-                utils.save_on_master({
-                    'model': model_without_ddp.state_dict(),
-                    'optimizer': optimizer.state_dict(),
-                    'lr_scheduler': lr_scheduler.state_dict(),
-                    'epoch': epoch,
-                    'scaler': loss_scaler.state_dict(),
-                    'args': args,
-                }, checkpoint_path)
 
         if epoch % args.val_interval == 0 or epoch == args.epochs-1:
             test_stats = evaluate(data_loader_val, model, device, amp=args.amp)
             print(f"Accuracy of the network on the {len(dataset_val)} test images: {test_stats['acc1']:.1f}%")
+            prev_max_accuracy = max_accuracy
             max_accuracy = max(max_accuracy, test_stats["acc1"])
             print(f'Max accuracy: {max_accuracy:.2f}%')
 
@@ -500,6 +498,17 @@ def main(args):
             if args.output_dir and utils.is_main_process():
                 with (output_dir / "log.txt").open("a") as f:
                     f.write(json.dumps(log_stats) + "\n")
+                if args.save_ckpt and max_accuracy > prev_max_accuracy:
+                    checkpoint_paths = [output_dir / 'best_checkpoint.pth']
+                    for checkpoint_path in checkpoint_paths:
+                        utils.save_on_master({
+                            'model': model_without_ddp.state_dict(),
+                            'optimizer': optimizer.state_dict(),
+                            'lr_scheduler': lr_scheduler.state_dict(),
+                            'epoch': epoch,
+                            'scaler': loss_scaler.state_dict(),
+                            'args': args,
+                        }, checkpoint_path)
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))

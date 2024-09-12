@@ -58,12 +58,8 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                     device: torch.device, epoch: int, loss_scaler, max_norm: float = 0,
                     model_ema: Optional[ModelEma] = None, mixup_fn: Optional[Mixup] = None,
                     amp: bool = True, teacher_model: torch.nn.Module = None,
-                    teach_loss: torch.nn.Module = None, use_tome=False,tome_initialized=False,tome_r=None,
-                    test_batch_size=512,
+                    teach_loss: torch.nn.Module = None,
                     deit=False):
-    
-    if use_tome:
-        assert type(tome_r) is list
 
     model.train()
     criterion.train()
@@ -94,32 +90,6 @@ def train_one_epoch(model: torch.nn.Module, criterion: torch.nn.Module,
                     outputs = model(samples)
                     loss = criterion(outputs, targets)
         else:
-
-            if not use_tome and not tome_initialized:
-                # latency test for no ToMe ViT
-                test_model_latency(model, device, test_batch_size)
-
-                # count flops when no tome attached
-                count_model_flops(model, device)
-
-                model.train()
-                tome_initialized = True
-
-            # use ToMe for training 
-            if use_tome and not tome_initialized:
-                print("ToMe model initialization.")
-                model_module = unwrap_model(model)
-                apply_tome(model_module)
-                model_module.r = tome_r
-
-                # latency test
-                test_model_latency(model, device, test_batch_size)
-            
-                # count flops
-                count_model_flops(model, device)
-
-                model.train()
-                tome_initialized = True
 
             if not deit:
                 outputs = model(samples)

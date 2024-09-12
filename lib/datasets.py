@@ -13,7 +13,7 @@ from timm.data.constants import IMAGENET_DEFAULT_MEAN, IMAGENET_DEFAULT_STD, IMA
 from timm.data import create_transform
 
 class general_dataset(ImageFolder):
-    def __init__(self, root, train=True, transform=None, target_transform=None, is_individual_prompt=False,**kwargs):
+    def __init__(self, root, train=True, transform=None, target_transform=None,**kwargs):
         self.dataset_root = root
         self.loader = default_loader
         self.target_transform = None
@@ -36,65 +36,65 @@ class general_dataset(ImageFolder):
                     label = int(line.split(' ')[1])
                     self.samples.append((os.path.join(root,img_name), label))
 
-def build_dataset(is_train, args, folder_name=None,is_individual_prompt=False):
+def build_dataset(is_train, args, folder_name=None):
     transform = build_transform(is_train, args)
 
     if args.data_set == 'clevr_count':
-        dataset = general_dataset(args.data_path, train=is_train, transform=transform,is_individual_prompt=is_individual_prompt)
+        dataset = general_dataset(args.data_path, train=is_train, transform=transform)
         nb_classes = 8
     elif args.data_set == 'diabetic_retinopathy':
-        dataset = general_dataset(args.data_path, train=is_train, transform=transform,is_individual_prompt=is_individual_prompt)
+        dataset = general_dataset(args.data_path, train=is_train, transform=transform)
         nb_classes = 5
     elif args.data_set == 'dsprites_loc':
-        dataset = general_dataset(args.data_path, train=is_train, transform=transform,is_individual_prompt=is_individual_prompt)
+        dataset = general_dataset(args.data_path, train=is_train, transform=transform)
         nb_classes = 16
     elif args.data_set == 'dtd':
-        dataset = general_dataset(args.data_path, train=is_train, transform=transform,is_individual_prompt=is_individual_prompt)
+        dataset = general_dataset(args.data_path, train=is_train, transform=transform)
         nb_classes = 47
     elif args.data_set == 'kitti':
-        dataset = general_dataset(args.data_path, train=is_train, transform=transform,is_individual_prompt=is_individual_prompt)
+        dataset = general_dataset(args.data_path, train=is_train, transform=transform)
         nb_classes = 4
     elif args.data_set == 'oxford_pet':
-        dataset = general_dataset(args.data_path, train=is_train, transform=transform,is_individual_prompt=is_individual_prompt)
+        dataset = general_dataset(args.data_path, train=is_train, transform=transform)
         nb_classes = 37
     elif args.data_set == 'resisc45':
-        dataset = general_dataset(args.data_path, train=is_train, transform=transform,is_individual_prompt=is_individual_prompt)
+        dataset = general_dataset(args.data_path, train=is_train, transform=transform)
         nb_classes = 45
     elif args.data_set == 'smallnorb_ele':
-        dataset = general_dataset(args.data_path, train=is_train, transform=transform,is_individual_prompt=is_individual_prompt)
+        dataset = general_dataset(args.data_path, train=is_train, transform=transform)
         nb_classes = 9
     elif args.data_set == 'svhn':
-        dataset = general_dataset(args.data_path, train=is_train, transform=transform,is_individual_prompt=is_individual_prompt)
+        dataset = general_dataset(args.data_path, train=is_train, transform=transform)
         nb_classes = 10
     elif args.data_set == 'cifar100':
-        dataset = general_dataset(args.data_path, train=is_train, transform=transform,is_individual_prompt=is_individual_prompt)
+        dataset = general_dataset(args.data_path, train=is_train, transform=transform)
         nb_classes = 100
     elif args.data_set == 'clevr_dist':
-        dataset = general_dataset(args.data_path, train=is_train, transform=transform,is_individual_prompt=is_individual_prompt)
+        dataset = general_dataset(args.data_path, train=is_train, transform=transform)
         nb_classes = 6
     elif args.data_set == 'caltech101':
-        dataset = general_dataset(args.data_path, train=is_train, transform=transform,is_individual_prompt=is_individual_prompt)
+        dataset = general_dataset(args.data_path, train=is_train, transform=transform)
         nb_classes = 102
     elif args.data_set == 'dmlab':
-        dataset = general_dataset(args.data_path, train=is_train, transform=transform,is_individual_prompt=is_individual_prompt)
+        dataset = general_dataset(args.data_path, train=is_train, transform=transform)
         nb_classes = 6
     elif args.data_set == 'dsprites_ori':
-        dataset = general_dataset(args.data_path, train=is_train, transform=transform,is_individual_prompt=is_individual_prompt)
+        dataset = general_dataset(args.data_path, train=is_train, transform=transform)
         nb_classes = 16
     elif args.data_set == 'eurosat':
-        dataset = general_dataset(args.data_path, train=is_train, transform=transform,is_individual_prompt=is_individual_prompt)
+        dataset = general_dataset(args.data_path, train=is_train, transform=transform)
         nb_classes = 10
     elif args.data_set == 'oxford_flowers102':
-        dataset = general_dataset(args.data_path, train=is_train, transform=transform,is_individual_prompt=is_individual_prompt)
+        dataset = general_dataset(args.data_path, train=is_train, transform=transform)
         nb_classes = 102
     elif args.data_set == 'patch_camelyon':
-        dataset = general_dataset(args.data_path, train=is_train, transform=transform,is_individual_prompt=is_individual_prompt)
+        dataset = general_dataset(args.data_path, train=is_train, transform=transform)
         nb_classes = 2
     elif args.data_set == 'smallnorb_azi':
-        dataset = general_dataset(args.data_path, train=is_train, transform=transform,is_individual_prompt=is_individual_prompt)
+        dataset = general_dataset(args.data_path, train=is_train, transform=transform)
         nb_classes = 18
     elif args.data_set == 'sun397':
-        dataset = general_dataset(args.data_path, train=is_train, transform=transform,is_individual_prompt=is_individual_prompt)
+        dataset = general_dataset(args.data_path, train=is_train, transform=transform)
         nb_classes = 397
 
     return dataset, nb_classes
