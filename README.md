@@ -23,7 +23,7 @@ We use Anaconda or Miniconda to maintain the fine-tuning environment of PYRA. Si
 conda create -n PYRA python=3.8
 conda activate PYRA
 conda install pytorch==1.12.1 torchvision==0.13.1 torchaudio==0.12.1 cudatoolkit=11.3 -c pytorch
-conda install timm==0.5.4 jupyter
+pip install timm==0.5.4 jupyter
 pip install scikit-image ptflops easydict PyYAML pillow opencv-python scipy mmcv==1.7.1 -i https://pypi.tuna.tsinghua.edu.cn/simple
 pip install -U fvcore
 ```
