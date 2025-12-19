@@ -13,7 +13,7 @@ The official implementation of our ECCV 2024 publication, PYRA (Parallel Yieldin
 
 ### Datasets
 
-We use the VTAB-1k dataset to evaluate our proposed PYRA. Use instructions in directory `data/vtab-source` to build VTAB-1k dataset locally (Internet access is demanded).
+We use the VTAB-1k dataset to evaluate our proposed PYRA. Please refer to [RepAdapter](https://github.com/luogen1996/RepAdapter?tab=readme-ov-file#data-preparation) for VTAB-1k preparation.
 
 ### Environment
 
@@ -32,7 +32,7 @@ You can use other mirrors beside tuna.tsinghua.edu.cn as long as everything is i
 
 ### Checkpoints
 
-Use [this link](https://drive.google.com/file/d/1MEzqBikrYIwmdCrIsXBtDp_QS8oOwhED/view?usp=sharing) to download all pre-trained model weights used for task adaptation in PYRA. After downloading all model checkpoints, unzip them to the `weight/` directory under the main directory (`PYRA/`).
+Use [this link](https://drive.google.com/file/d/1K3TOEpz2FZxyEbPJiybEgl1_cpWvpTVv/view?usp=sharing) to download all pre-trained model weights used for task adaptation in PYRA. After downloading all model checkpoints, unzip them to the `weight/` directory under the main directory (`PYRA/`).
 
 ## Training & Evaluation
 
